@@ -17,11 +17,13 @@ def main():
     db = phabdb.phdb(host=config.DB_HOST,
                     user=config.DB_USER,
                     passwd=config.DB_PASS,
-                    db="")
+                    db="performance_schema")
 
     phab = Phabricator(host=config.CONDUIT_HOST,
                        username=config.DB_USER,
+                       certificate=config.CONDUIT_CERT,
                        token=config.CONDUIT_TOKEN)
+    phab.update_interfaces()
     phab.user.whoami()
 
 
