@@ -5,28 +5,21 @@
 $root = dirname(dirname(__FILE__));
 require_once $root.'/scripts/__init_script__.php';
 
-# read sqlite DB
-try {
-    $con = 'sqlite:db.sqlite';
-    $pdo = new PDO($con, 'admin', 'admin');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-}
-catch(PDOException $e) {
-    $msg = 'ERREUR PDO dans ' . $e->getFile() . ' L.' . $e->getLine() . ' : ' . $e->getMessage();
-    die($msg);
-}
-
-$query = 'SELECT * FROM projects';
-$res = $pdo->query($query);
-while ($cur = $res->fetch())
+function checkProjectExist($project_name, $user)
 {
-    $project_name = $cur['name'];
+    $query = id(new PhabricatorProjectQuery())
+        ->withNames(array($project_name))
+        ->setViewer($user)
+        ->execute();
 
-    # retrieve admin user
-    $username = 'admin';
-    $user = id(new PhabricatorUser())->loadOneWhere(
-        'username = %s',
-        $username);
+    if (count($query) == 0)
+        return false;
+    else
+        return true;
+}
+
+function createProject($project_name, $user)
+{
 
     $project = PhabricatorProject::initializeNewProject($user);
 
@@ -54,6 +47,34 @@ while ($cur = $res->fetch())
            ->setContentSourceFromConduitRequest(new ConduitAPIRequest(array()));
      
     $editor->applyTransactions($project, $xactions);
+
+}
+
+# retrieve admin user
+$username = 'admin';
+$user = id(new PhabricatorUser())->loadOneWhere(
+    'username = %s',
+    $username);
+
+
+# read sqlite DB
+try {
+    $con = 'sqlite:db.sqlite';
+    $pdo = new PDO($con, 'admin', 'admin');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+}
+catch(PDOException $e) {
+    $msg = 'ERREUR PDO dans ' . $e->getFile() . ' L.' . $e->getLine() . ' : ' . $e->getMessage();
+    die($msg);
+}
+
+$query = 'SELECT * FROM projects';
+$res = $pdo->query($query);
+while ($cur = $res->fetch())
+{
+    $project_name = $cur['name'];
+    if (!checkProjectExist($project_name, $user));
+        createProject($project_name, $user);
 }
 
 ?>
