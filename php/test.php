@@ -5,22 +5,34 @@
 $root = dirname(dirname(__FILE__));
 require_once $root.'/scripts/__init_script__.php';
 
-function checkProjectExist($project_name, $user)
+# User
+function getAdmin()
 {
+    $username = 'admin';
+    $user = id(new PhabricatorUser())->loadOneWhere(
+        'username = %s',
+        $username);
+    return $user;
+}
+
+# Project
+function queryProject($project_name)
+{
+    $user = getAdmin();
     $query = id(new PhabricatorProjectQuery())
         ->withNames(array($project_name))
         ->setViewer($user)
         ->execute();
 
-    if (count($query) == 0)
-        return false;
-    else
-        return true;
+    $project = reset($query);
+
+    return $project;
 }
 
-function createProject($project_name, $user)
+function addProject($project_name)
 {
 
+    $user = getAdmin();
     $project = PhabricatorProject::initializeNewProject($user);
 
     $xactions = array();
@@ -32,30 +44,114 @@ function createProject($project_name, $user)
     # set members
     $members = array();
     $xactions[] = id(new PhabricatorProjectTransaction())
-           ->setTransactionType(PhabricatorTransactions::TYPE_EDGE)
-           ->setMetadataValue(
-             'edge:type',
-             PhabricatorProjectProjectHasMemberEdgeType::EDGECONST)
-           ->setNewValue(
-             array(
-               '+' => array_fuse($members),
-             ));
+        ->setTransactionType(PhabricatorTransactions::TYPE_EDGE)
+        ->setMetadataValue(
+            'edge:type',
+            PhabricatorProjectProjectHasMemberEdgeType::EDGECONST)
+            ->setNewValue(
+                array(
+                    '+' => array_fuse($members),
+                ));
 
     $editor = id(new PhabricatorProjectTransactionEditor())
-           ->setActor($user)
-           ->setContinueOnNoEffect(true)
-           ->setContentSourceFromConduitRequest(new ConduitAPIRequest(array()));
-     
+        ->setActor($user)
+        ->setContinueOnNoEffect(true)
+        ->setContentSourceFromConduitRequest(new ConduitAPIRequest(array()));
+
     $editor->applyTransactions($project, $xactions);
 
 }
 
-# retrieve admin user
-$username = 'admin';
-$user = id(new PhabricatorUser())->loadOneWhere(
-    'username = %s',
-    $username);
+function checkProject($project_name)
+{
+    $user = getAdmin();
+    $query = queryProject($project_name);
+    if ($query == NULL)
+    {
+        addProject($project_name);
+        $query = queryProject($project_name);
+    }
+    # return phid
+    $project = $query;
+    return $project;
+}
 
+# tasks
+function queryTask($kan_task, $project_id)
+{
+    $user = getAdmin();
+    $query = id(new ManiphestTaskQuery())
+        ->setViewer($user)
+        ->needProjectPHIDs(true)
+        ->withEdgeLogicPHIDs(
+            PhabricatorProjectObjectHasProjectEdgeType::EDGECONST,
+            PhabricatorQueryConstraint::OPERATOR_AND,
+            array($project_id))
+            ->execute();
+
+    # match title
+    foreach ($query as $task)
+    {
+
+        if (strcmp($task->getTitle(), $kan_task["title"] == 0))
+            return $task;
+    }
+    return NULL;
+}
+
+function addTask($kan_task,  $project_id)
+{
+    $user = getAdmin();
+    $task = ManiphestTask::initializeNewTask($user);
+
+
+    $changes = array();
+    $transactions = array();
+
+    $changes[ManiphestTransaction::TYPE_TITLE] = $kan_task['title'];
+    $changes[ManiphestTransaction::TYPE_DESCRIPTION] = $kan_task['description'];
+    $changes[ManiphestTransaction::TYPE_STATUS] = ManiphestTaskStatus::getDefaultStatus();
+    $changes[PhabricatorTransactions::TYPE_COMMENT] = null;
+    $project_type = PhabricatorProjectObjectHasProjectEdgeType::EDGECONST;
+    $transactions[] = id(new ManiphestTransaction())
+    ->setTransactionType(PhabricatorTransactions::TYPE_EDGE)
+    ->setMetadataValue('edge:type', $project_type)
+    ->setNewValue(
+      array(
+        '=' => array_fuse(array($project_id)),
+      ));
+
+
+    $template = new ManiphestTransaction();
+
+    foreach ($changes as $type => $value) {
+      $transaction = clone $template;
+      $transaction->setTransactionType($type);
+        $transaction->setNewValue($value);
+      
+      $transactions[] = $transaction;
+    }
+
+    $editor = id(new ManiphestTransactionEditor())
+        ->setActor($user)
+        ->setContentSourceFromConduitRequest(new ConduitAPIRequest(array()))
+        ->setContinueOnNoEffect(true);
+
+    $editor->applyTransactions($task, $transactions);
+}
+
+function checkTask($kan_task, $project_id)
+{
+    $query = queryTask($kan_task, $project_id);
+    if ($query == NULL)
+    {
+        addTask($kan_task, $project_id);
+        $query = queryTask($kan_task, $project_id);
+    }
+
+    $task = $query;
+    return $task;
+}
 
 # read sqlite DB
 try {
@@ -69,12 +165,31 @@ catch(PDOException $e) {
 }
 
 $query = 'SELECT * FROM projects';
-$res = $pdo->query($query);
-while ($cur = $res->fetch())
+$kan_projects = $pdo->query($query);
+while ($kan_project = $kan_projects->fetch())
 {
-    $project_name = $cur['name'];
-    if (!checkProjectExist($project_name, $user));
-        createProject($project_name, $user);
+    $project_name = $kan_project['name'];
+    print($project_name . "\n");
+    $project_name = "prout";
+    $project = checkproject($project_name);
+    $project_id = $project->getPHID();
+    print($project_id . "\n");
+    # add tasks
+    $query = 'SELECT * FROM tasks
+                WHERE project_id = ' . $kan_project['id'];
+    $kan_tasks = $pdo->query($query);
+    while ($kan_task = $kan_tasks->fetch())
+    {
+        $task = checkTask($kan_task, $project_id);
+        break;
+    }
+
+    # $columns = id(new PhabricatorProjectColumnQuery())
+    #     ->setViewer($user)
+    #     ->withProjectPHIDs(array($project->getPHID()))
+    #     ->execute();
+    # var_dump($columns);
+    break;
 }
 
 ?>
