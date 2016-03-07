@@ -169,19 +169,17 @@ $kan_projects = $pdo->query($query);
 while ($kan_project = $kan_projects->fetch())
 {
     $project_name = $kan_project['name'];
-    print($project_name . "\n");
-    $project_name = "prout";
+    print("checking project " . $project_name . "\n");
     $project = checkproject($project_name);
     $project_id = $project->getPHID();
-    print($project_id . "\n");
     # add tasks
     $query = 'SELECT * FROM tasks
                 WHERE project_id = ' . $kan_project['id'];
     $kan_tasks = $pdo->query($query);
     while ($kan_task = $kan_tasks->fetch())
     {
+        print("\tchecking task " . $kan_task['title'] . "\n");
         $task = checkTask($kan_task, $project_id);
-        break;
     }
 
     # $columns = id(new PhabricatorProjectColumnQuery())
@@ -189,7 +187,6 @@ while ($kan_project = $kan_projects->fetch())
     #     ->withProjectPHIDs(array($project->getPHID()))
     #     ->execute();
     # var_dump($columns);
-    break;
 }
 
 ?>
