@@ -88,7 +88,8 @@ def checkSubtask(project_phid, task_phid, subtask):
         # must create it
         actions = [
                 {"type" : "parent", "value" : task_phid},
-                {"type": "title", "value" : subtask.title}
+                {"type": "title", "value" : subtask.title},
+                {"type": "projects.set", "value" : [project_phid]}
             ]
         rep = conduit.maniphest.edit(transactions=actions)
         # TODO check rep
