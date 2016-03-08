@@ -1,3 +1,8 @@
+KANDB_HOST = "172.17.0.4"
+KANDB_USER = "root"
+KANDB_PASS = "admin"
+KANDB_DB = "kanboard"
+
 DB_HOST = "172.17.0.2" # my docker container address
 DB_PORT = "3306" # my docker container address
 DB_USER = "admin"
