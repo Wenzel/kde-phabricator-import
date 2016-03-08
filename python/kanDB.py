@@ -2,8 +2,15 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import config
+
 # global
-engine = create_engine('sqlite:///db.sqlite')
+engine = create_engine('mysql://{}:{}@{}/{}'.format(
+    config.KANDB_USER,
+    config.KANDB_PASS,
+    config.KANDB_HOST,
+    config.KANDB_DB),
+    encoding='utf-8')
 Base = declarative_base(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -17,7 +24,7 @@ class User(Base):
     __table_args__ = {'autoload':True}
 
 class Subtask(Base):
-    __tablename__ = 'subtasks'
+    __tablename__ = 'task_has_subtasks'
     __table_args__ = {'autoload':True}
 
 class Project(Base):
