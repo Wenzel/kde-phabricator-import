@@ -42,6 +42,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             args.append(admin)
             print('Adding {} {}'.format(username, email))
             process.run('php', args, WORKING_DIR)
+            return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
 def main():
     print(SECRET_PATH)
