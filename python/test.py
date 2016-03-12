@@ -34,7 +34,7 @@ def checkUser(user):
     if not rep:
         # must create user
         print('[INSERT] user [{}]'.format(user.email))
-        args { 
+        args = { 
                 'username' : user.username,
                 'email' : user.email,
                 'realname' : user.name,
