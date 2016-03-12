@@ -13,8 +13,8 @@ DB_NAME = "default_project"
 
 SECRET_KEY = "my_secret_key"
 SECRET_PATH = hashlib.sha1(SECRET_KEY.encode('utf-8')).hexdigest()
-PHAB_HOST = 'http://127.0.0.1:4000/'
-PHAB_SECRET_URL = PHAB_HOST + SECRET_PATH
+PHAB_HOST = 'http://172.17.0.3:4000/'
+PHAB_SECRET_URL = PHAB_HOST + SECRET_PATH + '/'
 PHAB_ADMIN = 'admin'
 
 CONDUIT_HOST = "http://127.0.0.1:8081/api/"
