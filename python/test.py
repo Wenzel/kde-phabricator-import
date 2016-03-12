@@ -6,6 +6,7 @@ import os
 import sys
 import re
 import logging
+import requests
 
 # local
 # from tools.wmfphablib import phabdb
@@ -25,6 +26,25 @@ def init_logger():
     logger = logging.getLogger()
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
+
+def checkUser(user):
+    rep = conduit.user.query(emails=[user.email])
+    # TODO check owner_phid
+    if not rep:
+        # must create user
+        print('[INSERT] user [{}]'.format(user.email))
+        args { 
+                'username' : user.username,
+                'email' : user.email,
+                'realname' : user.name,
+                'admin' : config.PHAB_ADMIN
+        }
+        r = requests.get(config.PHAB_HOST + config.PHAB_SECRET_URL, params=args)
+    rep = conduit.user.query(emails=[user.email])
+    # we should have only one user
+    (id, info) = rep.items()[0]
+    owner_phid = info['phid']
+    return owner_phid
 
 # check if a given project is present in phabricator
 # if not, it will be created
@@ -57,10 +77,15 @@ def checkTask(project_phid, task):
     if task_phid is None:
         # must create task
         logging.debug('\t[INSERT] task [{}]'.format(task.title))
-        # might have some unicode issue due to weird characters in description
-        # task.description = unicode(task.description, errors='ignore')
+        # check if this task has been assigned to someone
+        owner_phid = None
+        if task.owner_id != 0:
+            # find user in kanDB
+            user = kanDB.session.query(kanDB.User).filter_by(id=task.owner_id)
+            owner_phid = checkUser(user)
         rep = conduit.maniphest.createtask(title=task.title,
                 description=task.description,
+                ownerPHID=owner_phid,
                 projectPHIDs=[project_phid])
         task_phid = rep['phid']
     return task_phid
