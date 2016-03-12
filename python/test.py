@@ -28,6 +28,7 @@ def init_logger():
     logger.setLevel(logging.DEBUG)
 
 def checkUser(user):
+    print('[CHECK] user [{}]'.format(user.email))
     rep = conduit.user.query(emails=[user.email])
     # TODO check owner_phid
     if not rep:
