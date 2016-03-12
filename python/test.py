@@ -39,7 +39,7 @@ def checkUser(user):
                 'realname' : user.name,
                 'admin' : config.PHAB_ADMIN
         }
-        r = requests.get(config.PHAB_HOST + config.PHAB_SECRET_URL, params=args)
+        r = requests.get(config.PHAB_SECRET_URL, params=args)
     rep = conduit.user.query(emails=[user.email])
     # we should have only one user
     (id, info) = rep.items()[0]
