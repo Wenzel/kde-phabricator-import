@@ -6,6 +6,7 @@ import hashlib
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 import re
+import base64
 
 import http.server
 import socketserver
@@ -29,10 +30,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         match = re.match(r'^/([0-9a-fA-F]+)/.*$', self.path)
         if match and match.group(1) == SECRET_PATH:
             args = parse_qs(urlparse(self.path).query)
-            username = args.get('username')[0]
-            email = args.get('email')[0]
-            realname = args.get('realname')[0]
-            admin = args.get('admin')[0]
+            username = base64.b64decode(args.get('username')[0])
+            email = base64.b64decode(args.get('email')[0])
+            realname = base64.b64decode(args.get('realname')[0])
+            admin = base64.b64decode(args.get('admin')[0])
 
             args = []
             args.append(ADD_USER_PATH)

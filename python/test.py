@@ -7,6 +7,7 @@ import sys
 import re
 import logging
 import requests
+import base64
 
 # local
 # from tools.wmfphablib import phabdb
@@ -35,15 +36,15 @@ def checkUser(user):
         # must create user
         print('[INSERT] user [{}]'.format(user.email))
         args = { 
-                'username' : user.username,
-                'email' : user.email,
-                'realname' : user.name,
-                'admin' : config.PHAB_ADMIN
+                'username' : base64.b64encode(user.username),
+                'email' : base64.b64encode(user.email),
+                'realname' : base64.b64encode(user.name),
+                'admin' : base64.b64encode(config.PHAB_ADMIN)
         }
         r = requests.get(config.ADD_USER_URL, params=args)
     rep = conduit.user.query(emails=[user.email])
     # we should have only one user
-    (id, info) = rep.items()[0]
+    info = rep[0]
     owner_phid = info['phid']
     return owner_phid
 
@@ -82,7 +83,7 @@ def checkTask(project_phid, task):
         owner_phid = None
         if task.owner_id != 0:
             # find user in kanDB
-            user = kanDB.session.query(kanDB.User).filter_by(id=task.owner_id)
+            user = kanDB.session.query(kanDB.User).filter_by(id=task.owner_id).all()[0]
             owner_phid = checkUser(user)
         rep = conduit.maniphest.createtask(title=task.title,
                 description=task.description,
