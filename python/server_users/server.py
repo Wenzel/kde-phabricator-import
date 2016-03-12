@@ -52,7 +52,7 @@ def main():
     args.append('phabricator-uri')
     args.append(PHABRICATOR_URI)
     # test
-    # process.run('php', args, ARCANIST_WORKING_DIR)
+    process.run('php', args, ARCANIST_WORKING_DIR)
 
     handler = MyHandler
     socketserver.TCPServer.allow_reuse_address = True
