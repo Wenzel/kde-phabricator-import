@@ -34,3 +34,11 @@ class Project(Base):
 class Column(Base):
     __tablename__ = 'columns'
     __table_args__ = {'autoload':True}
+
+class Comment(Base):
+    __tablename__ = 'comments'
+    __table_args__ = {'autoload':True}
+
+class ProjectUser(Base):
+    __tablename__ = 'project_has_users'
+    __table_args__ = {'autoload':True}

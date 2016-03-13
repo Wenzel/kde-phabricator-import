@@ -29,12 +29,17 @@ def init_logger():
     logger.setLevel(logging.DEBUG)
 
 def checkUser(user):
-    print('[CHECK] user [{}]'.format(user.email))
+    print('\t\t\t[CHECK] user [{}]'.format(user.email))
     rep = conduit.user.query(emails=[user.email])
     # TODO check owner_phid
     if not rep:
         # must create user
-        print('[INSERT] user [{}]'.format(user.email))
+        print('\t\t\t[INSERT] user [{}]'.format(user.email))
+        # sanitize
+        user.username = user.username.decode('utf-8', 'ignore')
+        user.email = user.email.decode('utf-8', 'ignore')
+        user.name = user.name.decode('utf-8', 'ignore')
+
         args = { 
                 'username' : base64.b64encode(user.username),
                 'email' : base64.b64encode(user.email),
@@ -56,8 +61,16 @@ def checkProject(project):
     logging.debug('[CHECK] project [{}]'.format(project.name))
     rep = conduit.project.query(names=[project.name])
     if not rep['data']:
+        # must create project
         logging.debug('[INSERT] project [{}]'.format(project.name))
-        rep = conduit.project.create(name=project.name, members=[])
+        # check members
+        project_has_users = kanDB.session.query(kanDB.ProjectUser).filter_by(project_id=project.id)
+        members_phid_list = []
+        for m in project_has_users:
+            user = kanDB.session.query(kanDB.User).filter_by(id=project_has_users.user_id).all()[0]
+            member_phid = checkUser(user)
+            members_phid_list.append(member_phid)
+        rep = conduit.project.create(name=project.name, members=members_phid_list)
         # TODO check rep
     # getting phid
     rep = conduit.project.query(names=[project.name])
@@ -90,6 +103,19 @@ def checkTask(project_phid, task):
                 ownerPHID=owner_phid,
                 projectPHIDs=[project_phid])
         task_phid = rep['phid']
+        # task inserted
+        # add comments
+        comments = kanDB.session.query(kanDB.Comment).filter_by(task_id=task.id)
+        for c in comments:
+            logging.debug('\t\t[INSERT] comment')
+            # clean comment
+            c.comment = c.comment.decode('utf-8', 'ignore')
+            # edit task to add new comment
+            actions = [
+                    {"type": "comment", "value" : c.comment}
+                ]
+            rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
+            # TODO check rep
     return task_phid
 
 def checkSubtask(project_phid, task_phid, subtask):
