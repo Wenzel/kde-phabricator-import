@@ -1,3 +1,7 @@
 [submodule "tools"]
 	path = tools
 	url = git@github.com:Wenzel/wikimedia-phabricator-tools.git
+[submodule "python-phabricator"]
+	path = python-phabricator
+	url = https://github.com/Wenzel/python-phabricator
+	branch = master
