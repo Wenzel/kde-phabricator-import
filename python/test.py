@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf8
 
 # sys
@@ -8,6 +8,7 @@ import re
 import logging
 import requests
 import base64
+import json
 
 # local
 # from tools.wmfphablib import phabdb
@@ -16,7 +17,7 @@ import kanDB
 from pprint import pprint
 
 # 3rd
-from phabricator import Phabricator
+from phabricator.phabricator import Phabricator
 
 # conduit API
 conduit = Phabricator(host=config.CONDUIT_HOST,
@@ -36,15 +37,15 @@ def checkUser(user):
         # must create user
         print('\t\t\t[INSERT] user [{}]'.format(user.email))
         # sanitize
-        user.username = user.username.decode('utf-8', 'ignore')
-        user.email = user.email.decode('utf-8', 'ignore')
-        user.name = user.name.decode('utf-8', 'ignore')
+        # user.username = user.username.decode('utf-8', 'ignore')
+        # user.email = user.email.decode('utf-8', 'ignore')
+        # user.name = user.name.decode('utf-8', 'ignore')
 
         args = { 
-                'username' : base64.b64encode(user.username),
-                'email' : base64.b64encode(user.email),
-                'realname' : base64.b64encode(user.name),
-                'admin' : base64.b64encode(config.PHAB_ADMIN)
+                'username' : base64.b64encode(user.username.encode('utf-8')),
+                'email' : base64.b64encode(user.email.encode('utf-8')),
+                'realname' : base64.b64encode(user.name.encode('utf-8')),
+                'admin' : base64.b64encode(config.PHAB_ADMIN.encode('utf-8'))
         }
         r = requests.get(config.ADD_USER_URL, params=args)
     rep = conduit.user.query(emails=[user.email])
@@ -57,7 +58,7 @@ def checkUser(user):
 # if not, it will be created
 def checkProject(project):
     # utf8
-    project.name = project.name.decode('utf-8', 'ignore')
+    # project.name = project.name.decode('utf-8', 'ignore')
     logging.debug('[CHECK] project [{}]'.format(project.name))
     rep = conduit.project.query(names=[project.name])
     if not rep['data']:
@@ -74,14 +75,14 @@ def checkProject(project):
         # TODO check rep
     # getting phid
     rep = conduit.project.query(names=[project.name])
-    (project_phid, info) = rep['data'].items()[0]
+    project_phid = list(rep['data'].keys())[0]
     return project_phid
 
 def checkTask(project_phid, task):
     # must transform task.title and task.description from str to unicode for comparison
     # also remove non utf8 characters TODO how to keep them ?
-    task.title = task.title.decode('utf-8', 'ignore')
-    task.description = task.description.decode('utf-8', 'ignore')
+    # task.title = task.title.decode('utf-8', 'ignore')
+    # task.description = task.description.decode('utf-8', 'ignore')
     logging.debug('\t[CHECK] task [{}]'.format(task.title))
     rep = conduit.maniphest.query(projectPHIDs=[project_phid])
     task_phid = None
@@ -109,7 +110,7 @@ def checkTask(project_phid, task):
         for c in comments:
             logging.debug('\t\t[INSERT] comment')
             # clean comment
-            c.comment = c.comment.decode('utf-8', 'ignore')
+            # c.comment = c.comment.decode('utf-8', 'ignore')
             # edit task to add new comment
             actions = [
                     {"type": "comment", "value" : c.comment}
@@ -120,18 +121,19 @@ def checkTask(project_phid, task):
 
 def checkSubtask(project_phid, task_phid, subtask):
     # check utf8
-    subtask.title = subtask.title.decode('utf-8', 'ignore')
+    # subtask.title = subtask.title.decode('utf-8', 'ignore')
     logging.debug('\t\t[CHECK] subtask [{}]'.format(subtask.title))
     # query all subtasks of task_phid
     rep = conduit.maniphest.query(projectPHIDs=[project_phid], phids=[task_phid])
-    (id, info) = rep.items()[0]
+    info = list(rep.values())[0]
     task_subtask_phid_list = info['dependsOnTaskPHIDs']
     # iterate on each of these subtask
     # to see if we already exist
     subtask_phid = None
     for existing_subtask_phid in task_subtask_phid_list:
         rep = conduit.maniphest.query(phids=[existing_subtask_phid])
-        (id, info) = rep.items()[0]
+        id = list(rep.keys())[0]
+        info = list(rep.values())[0]
         if info['title'] == subtask.title:
             # already exists !
             subtask_phid = id
@@ -172,3 +174,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # project_name = u"01 Martin Gräßlin project test utf-8"
+    # rep = conduit.project.create(name=project_name, members=[])
+    # pprint(rep)
+    # args = {'title': 'Add wishes from J\xf6rg Knobloch'}
+    # mystr = u'Martin Gräßlin'
+    # args = {'title': mystr}
+    # pprint(args)
+    # json.dumps(args)

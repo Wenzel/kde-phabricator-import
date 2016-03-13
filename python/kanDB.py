@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 import config
 
 # global
-engine = create_engine('mysql://{}:{}@{}/{}'.format(
+engine = create_engine('mysql+cymysql://{}:{}@{}/{}'.format(
     config.KANDB_USER,
     config.KANDB_PASS,
     config.KANDB_HOST,
