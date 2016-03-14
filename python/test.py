@@ -36,11 +36,6 @@ def checkUser(user):
     if not rep:
         # must create user
         print('\t\t\t[INSERT] user [{}]'.format(user.email))
-        # sanitize
-        # user.username = user.username.decode('utf-8', 'ignore')
-        # user.email = user.email.decode('utf-8', 'ignore')
-        # user.name = user.name.decode('utf-8', 'ignore')
-
         args = { 
                 'username' : base64.b64encode(user.username.encode('utf-8')),
                 'email' : base64.b64encode(user.email.encode('utf-8')),
@@ -57,8 +52,6 @@ def checkUser(user):
 # check if a given project is present in phabricator
 # if not, it will be created
 def checkProject(project):
-    # utf8
-    # project.name = project.name.decode('utf-8', 'ignore')
     logging.debug('[CHECK] project [{}]'.format(project.name))
     rep = conduit.project.query(names=[project.name])
     if not rep['data']:
@@ -68,7 +61,7 @@ def checkProject(project):
         project_has_users = kanDB.session.query(kanDB.ProjectUser).filter_by(project_id=project.id)
         members_phid_list = []
         for m in project_has_users:
-            user = kanDB.session.query(kanDB.User).filter_by(id=project_has_users.user_id).all()[0]
+            user = kanDB.session.query(kanDB.User).filter_by(id=m.user_id).all()[0]
             member_phid = checkUser(user)
             members_phid_list.append(member_phid)
         rep = conduit.project.create(name=project.name, members=members_phid_list)
@@ -79,10 +72,6 @@ def checkProject(project):
     return project_phid
 
 def checkTask(project_phid, task):
-    # must transform task.title and task.description from str to unicode for comparison
-    # also remove non utf8 characters TODO how to keep them ?
-    # task.title = task.title.decode('utf-8', 'ignore')
-    # task.description = task.description.decode('utf-8', 'ignore')
     logging.debug('\t[CHECK] task [{}]'.format(task.title))
     rep = conduit.maniphest.query(projectPHIDs=[project_phid])
     task_phid = None
@@ -109,19 +98,16 @@ def checkTask(project_phid, task):
         comments = kanDB.session.query(kanDB.Comment).filter_by(task_id=task.id)
         for c in comments:
             logging.debug('\t\t[INSERT] comment')
-            # clean comment
-            # c.comment = c.comment.decode('utf-8', 'ignore')
             # edit task to add new comment
             actions = [
                     {"type": "comment", "value" : c.comment}
                 ]
             rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
             # TODO check rep
+        # already completed ?
     return task_phid
 
 def checkSubtask(project_phid, task_phid, subtask):
-    # check utf8
-    # subtask.title = subtask.title.decode('utf-8', 'ignore')
     logging.debug('\t\t[CHECK] subtask [{}]'.format(subtask.title))
     # query all subtasks of task_phid
     rep = conduit.maniphest.query(projectPHIDs=[project_phid], phids=[task_phid])
