@@ -105,6 +105,14 @@ def checkTask(project_phid, task):
             rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
             # TODO check rep
         # already completed ?
+        if task.date_completed:
+            logging.debug('Setting as closed')
+            # set task as closed
+            actions = [
+                    {"type": "status", "value" : "RESOLVED"}
+                ]
+            rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
+            # TODO check rep
     return task_phid
 
 def checkSubtask(project_phid, task_phid, subtask):
