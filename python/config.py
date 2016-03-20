@@ -9,7 +9,7 @@ DB_HOST = "172.17.0.2" # my docker container address
 DB_PORT = "3306" # my docker container address
 DB_USER = "admin"
 DB_PASS = "admin"
-DB_NAME = "default_project"
+DB_NAME = "default_maniphest"
 
 PHAB_HOST = "http://172.17.0.3"
 PHAB_ADMIN = 'admin'

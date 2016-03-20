@@ -14,6 +14,7 @@ import json
 # from tools.wmfphablib import phabdb
 import config
 import kanDB
+import PhabDB
 from pprint import pprint
 
 # 3rd
@@ -23,6 +24,12 @@ from phabricator.phabricator import Phabricator
 conduit = Phabricator(host=config.CONDUIT_HOST,
                    token=config.CONDUIT_TOKEN)
 conduit.update_interfaces()
+
+# # wikimedia custom API
+# db = phabdb.phdb(host=config.DB_HOST,
+#                 user=config.DB_USER,
+#                 passwd=config.DB_PASS,
+#                 db="performance_schema")
 
 def init_logger():
     logger = logging.getLogger()
@@ -103,6 +110,19 @@ def checkTask(project_phid, task):
                     {"type": "comment", "value" : c.comment}
                 ]
             rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
+            xact = rep['transactions'][0]['phid']
+            pprint(type(xact))
+            xact = xact.encode('utf-8')
+            # check if user exists
+            author = kanDB.session.query(kanDB.User).filter_by(id=c.user_id).all()[0]
+            author_phid = checkUser(author)
+            # get maniphest comment object
+            phab_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(transactionPHID=xact).all()[0]
+            # update
+            phab_comment.authorPHID = author_phid
+            # commit
+            PhabDB.session.commit()
+
             # TODO check rep
         # already completed ?
         if task.date_completed:
@@ -145,11 +165,6 @@ def checkSubtask(project_phid, task_phid, subtask):
 
 def main():
     init_logger()
-    # wikimedia custom API
-    # db = phabdb.phdb(host=config.DB_HOST,
-    #                 user=config.DB_USER,
-    #                 passwd=config.DB_PASS,
-    #                 db="performance_schema")
 
     projects = kanDB.session.query(kanDB.Project).all()
     # project
@@ -168,11 +183,12 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # project_name = u"01 Martin Gräßlin project test utf-8"
-    # rep = conduit.project.create(name=project_name, members=[])
-    # pprint(rep)
-    # args = {'title': 'Add wishes from J\xf6rg Knobloch'}
-    # mystr = u'Martin Gräßlin'
-    # args = {'title': mystr}
-    # pprint(args)
-    # json.dumps(args)
+    # author_phid = 'PHID-USER-rbqdh26r3niaff2fhk3l'
+    # # get maniphest comment object
+    # phab_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(id=248).all()[0]
+    # # update
+    # # phab_comment.authorPHID = author_phid
+    # phab_comment.content = "test content"
+    # # commit
+    # PhabDB.session.flush()
+    # PhabDB.session.commit()
