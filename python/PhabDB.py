@@ -16,3 +16,7 @@ session = Session()
 class ManiphestTransactionComment(Base):
     __tablename__ = 'maniphest_transaction_comment'
     __table_args__ = {'autoload':True}
+
+class ManiphestTransaction(Base):
+    __tablename__ = 'maniphest_transaction'
+    __table_args__ = {'autoload':True}

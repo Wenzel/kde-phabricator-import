@@ -25,12 +25,6 @@ conduit = Phabricator(host=config.CONDUIT_HOST,
                    token=config.CONDUIT_TOKEN)
 conduit.update_interfaces()
 
-# # wikimedia custom API
-# db = phabdb.phdb(host=config.DB_HOST,
-#                 user=config.DB_USER,
-#                 passwd=config.DB_PASS,
-#                 db="performance_schema")
-
 def init_logger():
     logger = logging.getLogger()
     logger.addHandler(logging.StreamHandler())
@@ -111,19 +105,19 @@ def checkTask(project_phid, task):
                 ]
             rep = conduit.maniphest.edit(transactions=actions, objectIdentifier=task_phid)
             xact = rep['transactions'][0]['phid']
-            pprint(type(xact))
-            xact = xact.encode('utf-8')
             # check if user exists
             author = kanDB.session.query(kanDB.User).filter_by(id=c.user_id).all()[0]
             author_phid = checkUser(author)
-            # get maniphest comment object
-            phab_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(transactionPHID=xact).all()[0]
+            # get maniphest transaction comment object
+            maniphest_transaction_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(transactionPHID=xact).all()[0]
+            # get maniphest_transaction object
+            maniphest_transaction = PhabDB.session.query(PhabDB.ManiphestTransaction).filter_by(phid=xact).all()[0]
             # update
-            phab_comment.authorPHID = author_phid
+            maniphest_transaction_comment.authorPHID = author_phid
+            maniphest_transaction.authorPHID = author_phid
             # commit
             PhabDB.session.commit()
 
-            # TODO check rep
         # already completed ?
         if task.date_completed:
             logging.debug('Setting as closed')
@@ -183,12 +177,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # author_phid = 'PHID-USER-rbqdh26r3niaff2fhk3l'
-    # # get maniphest comment object
-    # phab_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(id=248).all()[0]
-    # # update
-    # # phab_comment.authorPHID = author_phid
-    # phab_comment.content = "test content"
-    # # commit
-    # PhabDB.session.flush()
-    # PhabDB.session.commit()
