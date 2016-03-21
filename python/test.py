@@ -43,6 +43,7 @@ def checkUser(user):
                 'realname' : base64.b64encode(user.name.encode('utf-8')),
                 'admin' : base64.b64encode(config.PHAB_ADMIN.encode('utf-8'))
         }
+        pprint(config.ADD_USER_URL)
         r = requests.get(config.ADD_USER_URL, params=args)
     rep = conduit.user.query(emails=[user.email])
     # we should have only one user
