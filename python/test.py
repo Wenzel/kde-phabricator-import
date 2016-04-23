@@ -9,13 +9,13 @@ import logging
 import requests
 import base64
 import json
+import time
 
 # local
 # from tools.wmfphablib import phabdb
 import config
 import kanDB
 import PhabDB
-from pprint import pprint
 
 # 3rd
 from phabricator.phabricator import Phabricator
@@ -43,7 +43,6 @@ def checkUser(user):
                 'realname' : base64.b64encode(user.name.encode('utf-8')),
                 'admin' : base64.b64encode(config.PHAB_ADMIN.encode('utf-8'))
         }
-        pprint(config.ADD_USER_URL)
         r = requests.get(config.ADD_USER_URL, params=args)
     rep = conduit.user.query(emails=[user.email])
     # we should have only one user
@@ -109,7 +108,9 @@ def checkTask(project_phid, task):
             # check if user exists
             author = kanDB.session.query(kanDB.User).filter_by(id=c.user_id).all()[0]
             author_phid = checkUser(author)
+            time.sleep(1)
             # get maniphest transaction comment object
+            maniphest_transaction_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(transactionPHID=xact).all()
             maniphest_transaction_comment = PhabDB.session.query(PhabDB.ManiphestTransactionComment).filter_by(transactionPHID=xact).all()[0]
             # get maniphest_transaction object
             maniphest_transaction = PhabDB.session.query(PhabDB.ManiphestTransaction).filter_by(phid=xact).all()[0]

@@ -29,5 +29,4 @@ SECRET_PATH = hashlib.sha1(SECRET_KEY.encode('utf-8')).hexdigest()
 ADD_USER_URL = PHAB_HOST + ':4000' + '/' + SECRET_PATH + '/'
 
 CONDUIT_HOST = "http://127.0.0.1:8081/api/"
-CONDUIT_TOKEN = "api-ijxeacfzgnx5635zw2dpfi4s6h5w"
-print(PHAB_HOST)
+CONDUIT_TOKEN = "api-vlrdlpeu4jrcoqzu46jehqkjcpoj"
