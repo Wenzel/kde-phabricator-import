@@ -37,6 +37,8 @@ def checkUser(user):
     if not rep:
         # must create user
         print('\t\t\t[INSERT] user [{}]'.format(user.email))
+        # strip username
+        user.username = user.username.strip()
         args = { 
                 'username' : base64.b64encode(user.username.encode('utf-8')),
                 'email' : base64.b64encode(user.email.encode('utf-8')),
